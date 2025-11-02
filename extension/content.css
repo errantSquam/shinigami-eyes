@@ -27,11 +27,11 @@ body {
 }
 
 .tooltip-t-friendly {
-  border-bottom: 3px dotted var(--ShinigamiEyesTFriendly) !important;
+  border-bottom: 2px dotted rgb(from var(--ShinigamiEyesTFriendly) r g b / 0.7) !important;
 }
 
 .tooltip-transphobic {
-  border-bottom: 3px dotted var(--ShinigamiEyesTransphobic) !important;
+  border-bottom: 2px dotted rgb(from var(--ShinigamiEyesTransphobic) r g b/ 0.7) !important;
 }
 
 
