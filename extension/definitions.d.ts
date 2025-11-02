@@ -38,7 +38,7 @@ interface ShinigamiEyesCommand {
     confirmSetUrl?: string
     badIdentifierReason?: BadIdentifierReason
 }
-type LabelMap = { [labelIdentifier: string]: LabelKind };
+type LabelMap = { [identifier: string]: LabelKind };
 
 interface ShinigamiEyesMessage extends ShinigamiEyesSubmission, ShinigamiEyesCommand {
 }
