@@ -270,12 +270,12 @@ function solvePendingLabels() {
         for (const item of tosolve) {
             const label = response[item.identifier];
             knownLabels[item.identifier] = label || '';
-            applyLabel(item.element, item.identifier, 'disabled');
+            applyLabel(item.element, item.identifier, 'enabled');
         }
     });
 }
 
-function applyLabel(a: HTMLAnchorElement, identifier: string, tooltip: string = 'disabled') {
+function applyLabel(a: HTMLAnchorElement, identifier: string, tooltip: string = 'enabled') {
 
     let hasTooltip = tooltip === 'enabled' ? true : false
 
@@ -286,21 +286,45 @@ function applyLabel(a: HTMLAnchorElement, identifier: string, tooltip: string = 
 
     a.assignedCssLabel = knownLabels[identifier] || '';
 
-    if (a.assignedCssLabel) {
+    if (a.assignedCssLabel !== '') {
         if (hasTooltip) {
             a.classList.add('tooltip')
-            a.classList.add('tooltip-' + a.assignedCssLabel)
+    
+            a.id = 'tooltip' + a.getAttribute('href')
 
-            /*var tooltipData = document.createElement('span')
-            tooltipData.classList.add('tooltip-text')*/
-            if ((identifier) === 'transphobic') {
-                a.innerHTML += " <span class='tooltip-text'>Marked as <u>transphobic.</u></span>"
-            } else {
-                a.innerHTML += " <span class='tooltip-text'>Marked as <u>trans-friendly.</u></span>"
+
+
+
+            let tooltipData = document.createElement('span')
+            tooltipData.classList.add('tooltip-text')
+
+            tooltipData.setAttribute('popover', '')
+            tooltipData.setAttribute('anchor', 'tooltip' + a.getAttribute('href'))
+
+            
+
+            //Google checks; some elements have scaleY(-1); this flips them right back in place (hopefully)
+            let googleLabel = hostname.includes('google') ? 'google-' : ''
+            a.classList.add(googleLabel + 'tooltip-' + knownLabels[identifier])
+            
+            if ((knownLabels[identifier]) === 'transphobic') {
+                tooltipData.innerHTML = `Marked as <u>transphobic.</u>`
+            } else if ((knownLabels[identifier]) ==='t-friendly'){
+                tooltipData.innerHTML += `Marked as <u>trans-friendly.</u>`
             }
 
+            if ([...a.children].every(node => !node.classList.contains("tooltip-text"))){
+
+                a.parentElement.appendChild(tooltipData)
+            }
+
+            a.addEventListener("mouseover", ()=> {tooltipData.showPopover()})
+            a.addEventListener("mouseout", () => {tooltipData.hidePopover()})
+
+
+            console.log(identifier)
+
         } else {
-            console.log("no has tooltip")
             a.classList.add('assigned-label-' + a.assignedCssLabel);
             a.classList.add('has-assigned-label');
         }

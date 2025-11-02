@@ -34,6 +34,15 @@ body {
   border-bottom: 3px dotted var(--ShinigamiEyesTransphobic);
 }
 
+
+.google-tooltip-t-friendly {
+  color: var(--ShinigamiEyesTFriendly) !important;
+}
+
+.google-tooltip-transphobic {
+  color: var(--ShinigamiEyesTransphobic) !important;
+}
+
 .tooltip-text {
   visibility: hidden; 
   opacity: 0%;
