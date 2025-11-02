@@ -260,6 +260,7 @@ function solvePendingLabels() {
     var tosolve = labelsToSolve;
     labelsToSolve = [];
     browser.runtime.sendMessage<ShinigamiEyesCommand, LabelMap>({ ids: uniqueIdentifiers, myself: <string>myself }, (response: LabelMap) => {
+
         const theme = response[':theme'];
         if (theme != currentlyAppliedTheme) {
             if (currentlyAppliedTheme) document.body.classList.remove('shinigami-eyes-theme-' + currentlyAppliedTheme);
@@ -269,12 +270,15 @@ function solvePendingLabels() {
         for (const item of tosolve) {
             const label = response[item.identifier];
             knownLabels[item.identifier] = label || '';
-            applyLabel(item.element, item.identifier);
+            applyLabel(item.element, item.identifier, 'disabled');
         }
     });
 }
 
-function applyLabel(a: HTMLAnchorElement, identifier: string) {
+function applyLabel(a: HTMLAnchorElement, identifier: string, tooltip: string = 'disabled') {
+
+    let hasTooltip = tooltip === 'enabled' ? true : false
+
     if (a.assignedCssLabel) {
         a.classList.remove('assigned-label-' + a.assignedCssLabel);
         a.classList.remove('has-assigned-label');
@@ -283,8 +287,23 @@ function applyLabel(a: HTMLAnchorElement, identifier: string) {
     a.assignedCssLabel = knownLabels[identifier] || '';
 
     if (a.assignedCssLabel) {
-        a.classList.add('assigned-label-' + a.assignedCssLabel);
-        a.classList.add('has-assigned-label');
+        if (hasTooltip) {
+            a.classList.add('tooltip')
+            a.classList.add('tooltip-' + a.assignedCssLabel)
+
+            /*var tooltipData = document.createElement('span')
+            tooltipData.classList.add('tooltip-text')*/
+            if ((identifier) === 'transphobic') {
+                a.innerHTML += " <span class='tooltip-text'>Marked as <u>transphobic.</u></span>"
+            } else {
+                a.innerHTML += " <span class='tooltip-text'>Marked as <u>trans-friendly.</u></span>"
+            }
+
+        } else {
+            console.log("no has tooltip")
+            a.classList.add('assigned-label-' + a.assignedCssLabel);
+            a.classList.add('has-assigned-label');
+        }
         if (hostname == 'twitter.com')
             a.classList.remove('u-textInheritColor');
     }

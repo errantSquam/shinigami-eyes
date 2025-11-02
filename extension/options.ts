@@ -39,7 +39,7 @@ browser.storage.local.get(['tooltip'], obj => {
         ${
         x === 'enabled' ? 
         `<span class="tooltip tooltip-t-friendly"}>${x}
-            <span class ="tooltip-text">This person is <b>trans-friendly!</b></span>
+            <span class ="tooltip-text">Marked as <u>trans-friendly</u>.</span>
         </span>
         `:
 

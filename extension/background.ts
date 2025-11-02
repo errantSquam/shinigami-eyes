@@ -630,7 +630,7 @@ async function handleMessage(message: ShinigamiEyesMessage, sender: MessageSende
         uncommittedResponse = null;
     }
     if (message.closeCallingTab) {
-        //browser.tabs.remove(sender.tab.id);
+        browser.tabs.remove(sender.tab.id);
         return {};
     }
     const response: LabelMap = {};
