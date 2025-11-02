@@ -138,6 +138,12 @@ section {
     display: block;
 }
 
+#tooltip-settings label {
+    user-select: none;
+    font-weight: bold;
+    display: block;
+}
+
 #save-button {
     font-weight: bold;
     background-color: rgb(108, 212, 76);

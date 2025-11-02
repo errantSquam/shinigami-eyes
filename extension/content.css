@@ -21,6 +21,41 @@ body {
 .assigned-label-transphobic, a.assigned-label-transphobic { color: var(--ShinigamiEyesTransphobic) !important; }
 .assigned-label-t-friendly, a.assigned-label-t-friendly { color: var(--ShinigamiEyesTFriendly) !important; }
 
+.tooltip {
+   position: relative;
+   cursor: pointer;
+}
+
+.tooltip-t-friendly {
+  border-bottom: 3px dotted var(--ShinigamiEyesTFriendly);
+}
+
+.tooltip-transphobic {
+  border-bottom: 3px dotted var(--ShinigamiEyesTransphobic);
+}
+
+.tooltip-text {
+  visibility: hidden; 
+  opacity: 0%;
+  width: 130px;
+  background-color: rgba(1,1,1,0.7);
+  color: white;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 1; 
+  bottom: 100%;
+  left: 65%;
+  margin-left: -65px;
+}
+
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 100%;
+  transition: opacity 0.2s;
+}
+
 .has-assigned-label * { color: inherit !important; }
 .shinigami-eyes-debug-snippet-highlight {
      outline: 2px dashed darkorchid !important;

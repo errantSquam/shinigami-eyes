@@ -9,7 +9,7 @@ const BUNDLED_BLOOM_FILTER_VERSION = 24092900
 const badIdentifiersReasons: { [id: string]: BadIdentifierReason } = {};
 const badIdentifiers: { [id: string]: true } = {};
 
-interface BloomFilters { 
+interface BloomFilters {
     transphobic: CombinedBloomFilter;
     tfriendly: CombinedBloomFilter;
     bloomVersion: number;
@@ -413,23 +413,23 @@ var overrides: LabelMap = null;
 var accepted = false;
 var installationId: string = null;
 var theme: string = '';
-
+var tooltip: boolean = false;
 var disableAsymmetricEncryption = false;
 var cacheStorage: Cache;
 
 
-function writeLocalStorage(v: any): Promise<void> { 
+function writeLocalStorage(v: any): Promise<void> {
     return new Promise(resolve => browser.storage.local.set(v, resolve));
 }
 
-function readLocalStorage(keys: string[]) : Promise<any> { 
-    return new Promise(resolve => { 
+function readLocalStorage(keys: string[]): Promise<any> {
+    return new Promise(resolve => {
         browser.storage.local.get(keys, v => resolve(v));
     });
 }
 
 var initializationPromise = (async () => {
-    var v = await readLocalStorage(['overrides', 'accepted', 'installationId', 'theme', 'disableAsymmetricEncryption', 'disableDynamicUpdates', 'dynamicBloomLastUpdate']);
+    var v = await readLocalStorage(['overrides', 'accepted', 'installationId', 'theme', 'tooltip', 'disableAsymmetricEncryption', 'disableDynamicUpdates', 'dynamicBloomLastUpdate']);
     if (!v.installationId) {
         installationId = crypto.randomUUID();
         browser.storage.local.set({ installationId: installationId });
@@ -440,6 +440,7 @@ var initializationPromise = (async () => {
     accepted = v.accepted
     overrides = v.overrides || {}
     theme = v.theme;
+    tooltip = v.tooltip
     disableAsymmetricEncryption = v.disableAsymmetricEncryption || false;
 
     const migration = +(overrides[MIGRATION] || 0);
@@ -474,7 +475,7 @@ var initializationPromise = (async () => {
         }
     }
 
-    if (!bloomFilters) { 
+    if (!bloomFilters) {
         bloomFilters = {
             tfriendly: await loadBloomFilterBundled('t-friendly'),
             transphobic: await loadBloomFilterBundled('transphobic'),
@@ -482,7 +483,7 @@ var initializationPromise = (async () => {
         };
         console.log('Loaded bundled bloom filters.')
     }
-    
+
     if (!v.disableDynamicUpdates) {
         const now = Date.now();
         const dynamicBloomLastUpdate = <number>v.dynamicBloomLastUpdate;
@@ -490,16 +491,16 @@ var initializationPromise = (async () => {
         var initialDelay = !dynamicBloomLastUpdate || dynamicBloomLastUpdate > now ? 0 : Math.max(0, dynamicBloomLastUpdate + UPDATE_INTERVAL_MS - now);
 
         console.log('Initial delay for update check: ' + initialDelay)
-        setTimeout(() => { 
+        setTimeout(() => {
             setInterval(checkBloomFilterUpdates, UPDATE_INTERVAL_MS);
             checkBloomFilterUpdates()
         }, Math.max(5000, initialDelay));
-        
+
     }
 
 })();
-        
-interface DynamicConfiguration { 
+
+interface DynamicConfiguration {
     transphobic: string;
     tfriendly: string;
     bloomVersion: number;
@@ -507,20 +508,20 @@ interface DynamicConfiguration {
 }
 
 
-async function checkBloomFilterUpdates() { 
+async function checkBloomFilterUpdates() {
     try {
         console.log('Checking for updates...')
         const now = Date.now();
 
         await writeLocalStorage({ dynamicBloomLastUpdate: now });
 
-        const response = await fetch('https://raw.githubusercontent.com/shinigami-eyes/configuration/main/configuration.json' + '?random=' + Math.random(), {cache: "no-cache"})
+        const response = await fetch('https://raw.githubusercontent.com/shinigami-eyes/configuration/main/configuration.json' + '?random=' + Math.random(), { cache: "no-cache" })
         if (response.status != 200) throw ('HTTP status ' + response.status);
         const config = <DynamicConfiguration>await response.json();
         if (!config.bloomVersion) throw 'Missing bloomVersion';
 
-        if (!config.acceptDowngrades) { 
-            if (config.bloomVersion < bloomFilters.bloomVersion) { 
+        if (!config.acceptDowngrades) {
+            if (config.bloomVersion < bloomFilters.bloomVersion) {
                 console.log('Ignoring version downgrade')
                 return;
             }
@@ -530,21 +531,21 @@ async function checkBloomFilterUpdates() {
         await writeLocalStorage({ dynamicBloomTransphobicURL, dynamicBloomTFriendlyURL, dynamicBloomVersion: config.bloomVersion });
 
         console.log('Successfully checked for updates: ' + config.bloomVersion);
-    
+
         await loadDynamicBloomFilters(false);
-    } catch (e) { 
+    } catch (e) {
         console.warn('checkBloomFilterUpdates failed:');
         console.warn(e);
     }
 }
 
-async function getCached(cache: Cache, url: string, onlyIfPrecached: boolean) : Promise<Response | null> { 
+async function getCached(cache: Cache, url: string, onlyIfPrecached: boolean): Promise<Response | null> {
     const existing = await cache.match(url);
-    if (existing) { 
+    if (existing) {
         console.log('Already cached: ' + url);
         return existing;
     }
-    if (onlyIfPrecached) { 
+    if (onlyIfPrecached) {
         console.log('Not precached, aborting: ' + url)
         return null;
     }
@@ -554,11 +555,11 @@ async function getCached(cache: Cache, url: string, onlyIfPrecached: boolean) : 
     return response;
 }
 
-async function loadDynamicBloomFilters(onlyIfPrecached: boolean) : Promise<void> { 
+async function loadDynamicBloomFilters(onlyIfPrecached: boolean): Promise<void> {
     const info = await readLocalStorage(['dynamicBloomTransphobicURL', 'dynamicBloomTFriendlyURL', 'dynamicBloomVersion']);
     if (!info.dynamicBloomTransphobicURL || !info.dynamicBloomVersion) return;
 
-    if (bloomFilters && bloomFilters.bloomVersion == info.dynamicBloomVersion) { 
+    if (bloomFilters && bloomFilters.bloomVersion == info.dynamicBloomVersion) {
         console.log('Bloom filters already loaded at version ' + bloomFilters.bloomVersion);
         return;
     }
@@ -585,13 +586,13 @@ async function loadBloomFilterBundled(name: LabelKind): Promise<CombinedBloomFil
     return loadBloomFilterFromBuffer(name, arrayBuffer)
 }
 
-async function loadBloomFilterFromResponse(name: LabelKind, response: Response, expectedSize: number): Promise<CombinedBloomFilter> { 
+async function loadBloomFilterFromResponse(name: LabelKind, response: Response, expectedSize: number): Promise<CombinedBloomFilter> {
     var arrayBuffer = await response.arrayBuffer();
     if (arrayBuffer.byteLength != expectedSize) throw 'Mismatching bloom filter size.'
     return await loadBloomFilterFromBuffer(name, arrayBuffer);
 }
 
-function loadBloomFilterFromBuffer(name: LabelKind, data: ArrayBuffer) : CombinedBloomFilter {
+function loadBloomFilterFromBuffer(name: LabelKind, data: ArrayBuffer): CombinedBloomFilter {
     const combined = new CombinedBloomFilter();
     combined.name = name;
     combined.parts = [
@@ -608,10 +609,11 @@ function setAsymmetricEncryptionEnabled(enabled: boolean) {
 }
 
 
-async function handleMessage(message: ShinigamiEyesMessage, sender: MessageSender) : Promise<LabelMap> { 
-    if (message.setTheme) {
+async function handleMessage(message: ShinigamiEyesMessage, sender: MessageSender): Promise<LabelMap> {
+    if (message.setTheme || message.setTooltip) {
         theme = message.setTheme;
-        browser.storage.local.set({ theme: message.setTheme });
+
+        browser.storage.local.set({ theme: message.setTheme, tooltip: message.setTooltip});
         chrome.tabs.query({}, function (tabs) {
             for (var i = 0; i < tabs.length; ++i) {
                 try {
@@ -628,7 +630,7 @@ async function handleMessage(message: ShinigamiEyesMessage, sender: MessageSende
         uncommittedResponse = null;
     }
     if (message.closeCallingTab) {
-        browser.tabs.remove(sender.tab.id);
+        //browser.tabs.remove(sender.tab.id);
         return {};
     }
     const response: LabelMap = {};
@@ -659,7 +661,7 @@ async function handleMessage(message: ShinigamiEyesMessage, sender: MessageSende
     return response;
 }
 
-function testBloomFilter(bloomFilter: CombinedBloomFilter, id: string) { 
+function testBloomFilter(bloomFilter: CombinedBloomFilter, id: string) {
     if (bloomFilter.test(id)) return true;
     if (id.startsWith('youtube.com/@') && bloomFilter.test(id.replace('/@', '/c/'))) return true;
     return false;
@@ -695,18 +697,18 @@ const socialNetworkPatterns = [
 ];
 
 const homepagePatterns = [
-            "*://*/",
-            "*://*/?fbclid=*",
-            "*://*/about*",
-            "*://*/contact*",
-            "*://*/faq*",
-            "*://*/blog",
-            "*://*/blog/",
-            "*://*/news",
-            "*://*/news/",
-            "*://*/en/",
-            "*://*/index.html",
-            "*://*/index.php",
+    "*://*/",
+    "*://*/?fbclid=*",
+    "*://*/about*",
+    "*://*/contact*",
+    "*://*/faq*",
+    "*://*/blog",
+    "*://*/blog/",
+    "*://*/news",
+    "*://*/news/",
+    "*://*/en/",
+    "*://*/index.html",
+    "*://*/index.php",
 ];
 
 const allPatterns = socialNetworkPatterns.concat(homepagePatterns);
@@ -733,7 +735,7 @@ function createSystemContextMenu(text: string, id: ContextMenuCommand, separator
 
 
 browser.contextMenus.create({
-    title: '(Please right click on a link instead)', 
+    title: '(Please right click on a link instead)',
     id: 'instructions-needs-link',
     enabled: false,
     contexts: ['page'],
@@ -861,8 +863,8 @@ async function submitPendingRatings() {
     for (const entry of submitted) {
         submissionsBeingSubmitted.add(entry);
     }
-    
-    let plainRequest : any = {
+
+    let plainRequest: any = {
         installationId: installationId,
         lastError: lastSubmissionError,
         entries: submitted
@@ -874,7 +876,7 @@ async function submitPendingRatings() {
     let actualRequest = plainRequest;
 
     if (!disableAsymmetricEncryption) {
-        
+
         try {
             actualRequest = await encryptSubmission(plainRequest);
         } catch (e) {
@@ -884,7 +886,7 @@ async function submitPendingRatings() {
             // If no significant issues appear, this catch clause will be removed in a subsequent version of Shinigami Eyes.
             actualRequest.encryptionError = e + '';
         }
-        
+
     }
 
     lastSubmissionError = null;
@@ -934,7 +936,7 @@ function saveLabel(response: ShinigamiEyesSubmission) {
         response.submissionId = (Math.random() + '').replace('.', '');
         let totalSize = 0;
         for (const entry of getPendingSubmissions()) {
-            if(entry.snippet)
+            if (entry.snippet)
                 totalSize += entry.snippet.length;
         }
         if (totalSize > 2000000) {
@@ -976,7 +978,7 @@ function openOptions() {
     })
 }
 
-function getURL(path: string) { 
+function getURL(path: string) {
     return browser.extension.getURL(path);
 }
 

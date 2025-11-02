@@ -22,12 +22,48 @@ browser.storage.local.get(['theme'], obj => {
 
 });
 
+
+browser.storage.local.get(['tooltip'], obj => {
+    console.log(obj.tooltip)
+
+    var tooltipOption: string = obj.tooltip || 'disabled';
+    var tooltipOptionContainer = document.getElementById('tooltip-settings');
+
+    [
+        'enabled', 
+        'disabled'
+    ].map(x => {
+        tooltipOptionContainer.insertAdjacentHTML('beforeend', `
+        <label class="shinigami-eyes-tooltip shinigami-eyes-tooltip-${x}">
+        <input type="radio" name="selected-tooltip" ${x == tooltipOption ? 'checked' : ''} data-tooltip="${x}">
+        ${
+        x === 'enabled' ? 
+        `<span class="tooltip tooltip-t-friendly"}>${x}
+            <span class ="tooltip-text">This person is <b>trans-friendly!</b></span>
+        </span>
+        `:
+
+        `<span class=${x==='enabled'? "assigned-label-t-friendly" : "assigned-label-transphobic"}>${x}</span>`
+
+        }
+        </label>
+        `);
+    });
+
+});
+
 document.getElementById('save-button').addEventListener('click', async () => {
     var theme = (<HTMLInputElement>
         [...document.querySelectorAll('.shinigami-eyes-theme input')]
             .filter(x => (<HTMLInputElement>x).checked)[0]
     ).dataset.theme;
-    browser.runtime.sendMessage(<ShinigamiEyesCommand>{ closeCallingTab: true, setTheme: theme }, () => { });
+    var tooltip = (<HTMLInputElement>
+        [...document.querySelectorAll('.shinigami-eyes-tooltip input')]
+            .filter(x => (<HTMLInputElement>x).checked)[0]
+    ).dataset.tooltip;
+    console.log(tooltip)
+    browser.storage.local.get(['theme', 'tooltip'], obj => {console.log(obj)})
+    browser.runtime.sendMessage(<ShinigamiEyesCommand>{ closeCallingTab: true, setTheme: theme, setTooltip: tooltip }, () => { });
 });
 
 

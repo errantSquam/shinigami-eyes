@@ -30,6 +30,7 @@ interface ShinigamiEyesCommand {
     updateAllLabels?: boolean
     closeCallingTab?: boolean
     setTheme?: string
+    setTooltip?: string
     confirmSetIdentifier?: string
     confirmSetLabel?: LabelKind
     confirmSetUrl?: string
