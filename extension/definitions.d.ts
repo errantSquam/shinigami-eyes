@@ -7,6 +7,7 @@ interface LabelToSolve {
     identifier: string
 }
 type LabelKind = 't-friendly' | 'transphobic' | 'none' | '' | 'bad-identifier';
+type TooltipKind = 'enabled' | 'disabled'
 interface ShinigamiEyesSubmission {
     mark?: LabelKind
     url?: string
@@ -31,12 +32,13 @@ interface ShinigamiEyesCommand {
     closeCallingTab?: boolean
     setTheme?: string
     setTooltip?: string
+    getTooltip?:boolean
     confirmSetIdentifier?: string
     confirmSetLabel?: LabelKind
     confirmSetUrl?: string
     badIdentifierReason?: BadIdentifierReason
 }
-type LabelMap = { [identifier: string]: LabelKind };
+type LabelMap = { [labelIdentifier: string]: LabelKind };
 
 interface ShinigamiEyesMessage extends ShinigamiEyesSubmission, ShinigamiEyesCommand {
 }

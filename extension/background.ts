@@ -413,7 +413,7 @@ var overrides: LabelMap = null;
 var accepted = false;
 var installationId: string = null;
 var theme: string = '';
-var tooltip: string = 'disabled';
+var tooltip: string = '';
 var disableAsymmetricEncryption = false;
 var cacheStorage: Cache;
 
@@ -428,7 +428,12 @@ function readLocalStorage(keys: string[]): Promise<any> {
     });
 }
 
-var initializationPromise = (async () => {
+var initializationPromise = (async (getTooltip: boolean = false) => {
+    //for optimization purposes; grab tooltip and go instead of calling this multiple times if not initialized already
+    if (tooltip !== '' && getTooltip) {
+        return
+    }
+
     var v = await readLocalStorage(['overrides', 'accepted', 'installationId', 'theme', 'tooltip', 'disableAsymmetricEncryption', 'disableDynamicUpdates', 'dynamicBloomLastUpdate']);
     if (!v.installationId) {
         installationId = crypto.randomUUID();
@@ -634,8 +639,16 @@ async function handleMessage(message: ShinigamiEyesMessage, sender: MessageSende
         browser.tabs.remove(sender.tab.id);
         return {};
     }
+
+
     const response: LabelMap = {};
     await initializationPromise;
+    
+    if (message.getTooltip) {
+        response[':tooltip'] = <any>tooltip;
+        return response
+    }
+
     const tfriendlyBloomFilter = bloomFilters.tfriendly;
     const transphobicBloomFilter = bloomFilters.transphobic;
     const transphobic = message.myself && transphobicBloomFilter.test(message.myself) && installationId.includes('-');

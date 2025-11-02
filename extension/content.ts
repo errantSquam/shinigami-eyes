@@ -310,14 +310,14 @@ function applyLabel(a: HTMLAnchorElement, identifier: string, tooltip: string = 
             a.classList.add(googleLabel + 'tooltip-' + knownLabels[identifier])
 
             if ((knownLabels[identifier]) === 'transphobic') {
-                tooltipData.innerHTML = `Marked as <u>transphobic.</u>`
+                tooltipData.innerHTML = `   Marked as <u>transphobic.</u>   `
             } else if ((knownLabels[identifier]) === 't-friendly') {
-                tooltipData.innerHTML = `Marked as <u>trans-friendly.</u>`
+                tooltipData.innerHTML = `   Marked as <u>trans-friendly.</u>   `
             }
 
             if ([...a.children].every(node => !node.classList.contains("tooltip-text"))) {
 
-                a.parentElement.appendChild(tooltipData)
+                a.appendChild(tooltipData)
             }
 
             a.addEventListener("mouseover", () => {
@@ -349,7 +349,7 @@ function applyLabel(a: HTMLAnchorElement, identifier: string, tooltip: string = 
 
 function initLink(a: HTMLAnchorElement) {
     var identifier = getIdentifier(a);
-    browser.runtime.sendMessage<ShinigamiEyesCommand, LabelMap>({}, (response: LabelMap) => {
+    browser.runtime.sendMessage<ShinigamiEyesCommand, LabelMap>({getTooltip: true}, (response: LabelMap) => {
         
         if (!identifier) {
             if (hostname == 'youtube.com' || hostname == 'twitter.com')

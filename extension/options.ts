@@ -53,9 +53,9 @@ browser.storage.local.get(['tooltip'], obj => {
     let tooltipData = document.createElement('span');
     tooltipData.classList.add('tooltip-text');
     tooltipData.setAttribute('popover', '');
-    tooltipData.innerHTML = `Marked as <u>trans-friendly.</u>`;
+    tooltipData.innerHTML = `   Marked as <u>trans-friendly.</u>   `;
 
-    a.parentElement.appendChild(tooltipData);
+    a.appendChild(tooltipData);
     a.addEventListener("mouseover", () => {
         let dimensions = a.getBoundingClientRect();
         let yOffset = dimensions.height
