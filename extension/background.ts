@@ -413,7 +413,7 @@ var overrides: LabelMap = null;
 var accepted = false;
 var installationId: string = null;
 var theme: string = '';
-var tooltip: boolean = false;
+var tooltip: string = 'disabled';
 var disableAsymmetricEncryption = false;
 var cacheStorage: Cache;
 
@@ -612,6 +612,7 @@ function setAsymmetricEncryptionEnabled(enabled: boolean) {
 async function handleMessage(message: ShinigamiEyesMessage, sender: MessageSender): Promise<LabelMap> {
     if (message.setTheme || message.setTooltip) {
         theme = message.setTheme;
+        tooltip = message.setTooltip;
 
         browser.storage.local.set({ theme: message.setTheme, tooltip: message.setTooltip});
         chrome.tabs.query({}, function (tabs) {
@@ -658,6 +659,7 @@ async function handleMessage(message: ShinigamiEyesMessage, sender: MessageSende
             response[id] = isTransphobic ? 'transphobic' : 't-friendly';
     }
     response[':theme'] = <any>theme;
+    response[':tooltip'] = <any>tooltip;
     return response;
 }
 

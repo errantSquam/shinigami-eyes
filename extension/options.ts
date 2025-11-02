@@ -24,31 +24,46 @@ browser.storage.local.get(['theme'], obj => {
 
 
 browser.storage.local.get(['tooltip'], obj => {
-    console.log(obj.tooltip)
-
     var tooltipOption: string = obj.tooltip || 'disabled';
     var tooltipOptionContainer = document.getElementById('tooltip-settings');
 
-    [
-        'enabled', 
+
+
+    [ 
+        'enabled',
         'disabled'
     ].map(x => {
         tooltipOptionContainer.insertAdjacentHTML('beforeend', `
         <label class="shinigami-eyes-tooltip shinigami-eyes-tooltip-${x}">
         <input type="radio" name="selected-tooltip" ${x == tooltipOption ? 'checked' : ''} data-tooltip="${x}">
-        ${
-        x === 'enabled' ? 
-        `<span class="tooltip tooltip-t-friendly"}>${x}
-            <span class ="tooltip-text">Marked as <u>trans-friendly</u>.</span>
-        </span>
-        `:
+        ${x === 'enabled' ? 
+            `<span id = "enabled" class = 'tooltip-t-friendly'>Enabled</span>`
+        :
 
-        `<span class=${x==='enabled'? "assigned-label-t-friendly" : "assigned-label-transphobic"}>${x}</span>`
+                `<span class="assigned-label-transphobic">Disabled</span>`
 
-        }
+            }
         </label>
         `);
     });
+
+    let a = document.getElementById('enabled');
+    a.classList.add('tooltip');
+
+    let tooltipData = document.createElement('span');
+    tooltipData.classList.add('tooltip-text');
+    tooltipData.setAttribute('popover', '');
+    tooltipData.innerHTML = `Marked as <u>trans-friendly.</u>`;
+
+    a.parentElement.appendChild(tooltipData);
+    a.addEventListener("mouseover", () => {
+        let dimensions = a.getBoundingClientRect();
+        let yOffset = dimensions.height
+        tooltipData.style.left = dimensions.x + dimensions.width / 2 + 'px'
+        tooltipData.style.top = (dimensions.y - yOffset) + 'px'
+        tooltipData.showPopover();
+    });
+    a.addEventListener("mouseout", () => { tooltipData.hidePopover() });
 
 });
 
@@ -61,8 +76,7 @@ document.getElementById('save-button').addEventListener('click', async () => {
         [...document.querySelectorAll('.shinigami-eyes-tooltip input')]
             .filter(x => (<HTMLInputElement>x).checked)[0]
     ).dataset.tooltip;
-    console.log(tooltip)
-    browser.storage.local.get(['theme', 'tooltip'], obj => {console.log(obj)})
+    browser.storage.local.get(['theme', 'tooltip'], obj => { console.log(obj) })
     browser.runtime.sendMessage(<ShinigamiEyesCommand>{ closeCallingTab: true, setTheme: theme, setTooltip: tooltip }, () => { });
 });
 

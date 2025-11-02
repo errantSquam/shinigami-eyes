@@ -85,11 +85,11 @@ function maybeDisableCustomCss() {
         [...document.styleSheets].filter(<any>shouldDisable).forEach(x => x.disabled = true);
 }
 
-function isElementVisible(x: HTMLElement) { 
+function isElementVisible(x: HTMLElement) {
     return !!x.getBoundingClientRect().width;
 }
 
-function linkify(oldNode: Node, href: string): HTMLAnchorElement { 
+function linkify(oldNode: Node, href: string): HTMLAnchorElement {
     if ((oldNode as Element).tagName == 'A') return <HTMLAnchorElement>oldNode;
     const newLink = document.createElement('a');
     newLink.textContent = oldNode.textContent;
@@ -102,7 +102,7 @@ function linkify(oldNode: Node, href: string): HTMLAnchorElement {
     return newLink;
 }
 
-function linkifyBlueskyLinks() { 
+function linkifyBlueskyLinks() {
     const toLinkify = [...document.querySelectorAll('div[aria-label][role=link][tabindex="0"] > div')].filter(x => x.childNodes.length == 1 && x.firstChild.nodeType == Node.TEXT_NODE && isElementVisible(x as HTMLElement));
     for (const oldLink of toLinkify) {
         const identifier = oldLink.parentElement.getAttribute('aria-label') ?? '';
@@ -111,9 +111,9 @@ function linkifyBlueskyLinks() {
     }
 
     const mobileUiToLinkify = [...document.querySelectorAll('div[dir=auto][style]')].filter(x => x.firstChild == x.lastChild && x.firstChild?.nodeType == Node.TEXT_NODE && x.firstChild.textContent == '·').map(x => x.previousSibling as HTMLElement).filter(x => (x.firstChild as HTMLElement)?.tagName == 'DIV' && isElementVisible(x));
-    for (const oldLink of mobileUiToLinkify) { 
+    for (const oldLink of mobileUiToLinkify) {
         const span = oldLink.querySelector('span')
-        if (span && span.textContent.startsWith('@')) { 
+        if (span && span.textContent.startsWith('@')) {
             const identifier = span.textContent.substring(1).trim();
             const href = 'https://bsky.app/profile/' + identifier;
             const displayName = span.parentElement.firstChild;
@@ -124,7 +124,7 @@ function linkifyBlueskyLinks() {
     }
 
     const profileLinks = [...document.querySelectorAll('[data-testid=profileHeaderDisplayName]')].filter(x => isElementVisible(x as HTMLElement));
-    if (profileLinks.length == 1) { 
+    if (profileLinks.length == 1) {
         const profileLink = profileLinks[0];
         const parts = new URL(location.href).pathname.split('/');
         if (parts[1] == 'profile') {
@@ -144,7 +144,7 @@ function init() {
         setInterval(updateYouTubeChannelHeader, 300);
         setInterval(updateAllLabels, 6000);
     }
-    if (domainIs(hostname, 'bsky.app')) { 
+    if (domainIs(hostname, 'bsky.app')) {
         setInterval(linkifyBlueskyLinks, 500);
     }
     if (hostname == 'twitter.com') {
@@ -244,8 +244,8 @@ function updateYouTubeChannelHeader() {
 function updateAllLabels(refresh?: boolean) {
     if (!colorLinks) return;
     if (refresh) knownLabels = {};
-        for (const a of document.getElementsByTagName('a')) {
-            initLink(a);
+    for (const a of document.getElementsByTagName('a')) {
+        initLink(a);
     }
     solvePendingLabels();
 }
@@ -270,12 +270,18 @@ function solvePendingLabels() {
         for (const item of tosolve) {
             const label = response[item.identifier];
             knownLabels[item.identifier] = label || '';
-            applyLabel(item.element, item.identifier, 'enabled');
+            applyLabel(item.element, item.identifier, response[':tooltip']);
         }
     });
 }
 
-function applyLabel(a: HTMLAnchorElement, identifier: string, tooltip: string = 'enabled') {
+function getFontSize(a: HTMLAnchorElement) {
+    var style = window.getComputedStyle(a, null).getPropertyValue('font-size');
+    var fontSize = parseFloat(style);
+    return fontSize;
+}
+
+function applyLabel(a: HTMLAnchorElement, identifier: string, tooltip: string = 'disabled') {
 
     let hasTooltip = tooltip === 'enabled' ? true : false
 
@@ -289,9 +295,6 @@ function applyLabel(a: HTMLAnchorElement, identifier: string, tooltip: string = 
     if (a.assignedCssLabel !== '') {
         if (hasTooltip) {
             a.classList.add('tooltip')
-    
-            a.id = 'tooltip' + a.getAttribute('href')
-
 
 
 
@@ -299,54 +302,71 @@ function applyLabel(a: HTMLAnchorElement, identifier: string, tooltip: string = 
             tooltipData.classList.add('tooltip-text')
 
             tooltipData.setAttribute('popover', '')
-            tooltipData.setAttribute('anchor', 'tooltip' + a.getAttribute('href'))
 
-            
+
 
             //Google checks; some elements have scaleY(-1); this flips them right back in place (hopefully)
             let googleLabel = hostname.includes('google') ? 'google-' : ''
             a.classList.add(googleLabel + 'tooltip-' + knownLabels[identifier])
-            
+
             if ((knownLabels[identifier]) === 'transphobic') {
                 tooltipData.innerHTML = `Marked as <u>transphobic.</u>`
-            } else if ((knownLabels[identifier]) ==='t-friendly'){
-                tooltipData.innerHTML += `Marked as <u>trans-friendly.</u>`
+            } else if ((knownLabels[identifier]) === 't-friendly') {
+                tooltipData.innerHTML = `Marked as <u>trans-friendly.</u>`
             }
 
-            if ([...a.children].every(node => !node.classList.contains("tooltip-text"))){
+            if ([...a.children].every(node => !node.classList.contains("tooltip-text"))) {
 
                 a.parentElement.appendChild(tooltipData)
             }
 
-            a.addEventListener("mouseover", ()=> {tooltipData.showPopover()})
-            a.addEventListener("mouseout", () => {tooltipData.hidePopover()})
+            a.addEventListener("mouseover", () => {
+
+                let dimensions = a.getBoundingClientRect();
+                let yOffset = dimensions.height
+
+                if ([...a.children].some(node => node.nodeName === "YT-IMG-SHADOW")) {
+                    yOffset = getFontSize(a) * 2 //a bit hacky and estimating
+                }
+
+                tooltipData.style.left = dimensions.x + dimensions.width / 2 + 'px'
+                tooltipData.style.top = (dimensions.y - yOffset) + 'px'
+                tooltipData.showPopover();
 
 
-            console.log(identifier)
+            })
+            a.addEventListener("mouseout", () => { tooltipData.hidePopover() })
 
         } else {
             a.classList.add('assigned-label-' + a.assignedCssLabel);
             a.classList.add('has-assigned-label');
+
+            if (hostname == 'twitter.com')
+                a.classList.remove('u-textInheritColor');
         }
-        if (hostname == 'twitter.com')
-            a.classList.remove('u-textInheritColor');
     }
 }
 
 function initLink(a: HTMLAnchorElement) {
     var identifier = getIdentifier(a);
-    if (!identifier) {
-        if (hostname == 'youtube.com' || hostname == 'twitter.com')
-            applyLabel(a, '');
-        return;
-    }
+    browser.runtime.sendMessage<ShinigamiEyesCommand, LabelMap>({}, (response: LabelMap) => {
+        
+        if (!identifier) {
+            if (hostname == 'youtube.com' || hostname == 'twitter.com')
+                applyLabel(a, '', response[':tooltip']);
+            return;
+        }
 
-    var label = knownLabels[identifier];
-    if (label === undefined) {
-        labelsToSolve.push({ element: a, identifier: identifier });
-        return;
-    }
-    applyLabel(a, identifier);
+        var label = knownLabels[identifier];
+        if (label === undefined) {
+            labelsToSolve.push({ element: a, identifier: identifier });
+            return;
+        }
+        applyLabel(a, identifier, response[':tooltip']);
+
+
+
+    });
 }
 
 function domainIs(host: string, baseDomain: string) {
@@ -410,7 +430,7 @@ function getIdentifier(link: string | HTMLAnchorElement, originalTarget?: HTMLEl
     }
 }
 
-function isFacebookPictureLink(element: HTMLAnchorElement) { 
+function isFacebookPictureLink(element: HTMLAnchorElement) {
     var href = element.href;
     return href && (href.includes('/photo/') || href.includes('/photo.php'));
 }
@@ -420,17 +440,17 @@ function getIdentifierFromElementImpl(element: HTMLAnchorElement, originalTarget
 
     const dataset = element.dataset;
 
-    if (hostname == 'bsky.app') { 
-        if (element.href.includes('/profile/did:')) { 
-            if (element.parentElement?.getAttribute('data-testid') == 'profileHeaderDisplayName') { 
+    if (hostname == 'bsky.app') {
+        if (element.href.includes('/profile/did:')) {
+            if (element.parentElement?.getAttribute('data-testid') == 'profileHeaderDisplayName') {
                 const profileHeaderHandle = element.parentElement?.parentElement?.nextSibling?.firstChild?.firstChild;
                 const profileHeaderHandleText = profileHeaderHandle.textContent?.trim()
-                if (profileHeaderHandle && profileHeaderHandleText.startsWith('@') && !profileHeaderHandleText.includes(' ') && !profileHeaderHandle.firstChild) { 
+                if (profileHeaderHandle && profileHeaderHandleText.startsWith('@') && !profileHeaderHandleText.includes(' ') && !profileHeaderHandle.firstChild) {
                     return profileHeaderHandleText.substring(1);
                 }
             }
             const identifier = element.textContent.trim();
-            if (identifier.startsWith('@')) { 
+            if (identifier.startsWith('@')) {
                 return identifier.substring(1);
             }
             return null;
@@ -464,7 +484,7 @@ function getIdentifierFromElementImpl(element: HTMLAnchorElement, originalTarget
         if (parent && parent.tagName == 'LI') return null;
 
         // React post timestamp
-        if (element.getAttribute('role') == 'link' && parent && parent.tagName == 'SPAN' && firstChild && firstChild.tagName == 'SPAN' && firstChild.tabIndex == 0) 
+        if (element.getAttribute('role') == 'link' && parent && parent.tagName == 'SPAN' && firstChild && firstChild.tagName == 'SPAN' && firstChild.tabIndex == 0)
             return null;
 
         // React big profile picture (user or page)
@@ -473,7 +493,7 @@ function getIdentifierFromElementImpl(element: HTMLAnchorElement, originalTarget
         }
 
         // React cover picture
-        if (originalTarget instanceof HTMLImageElement && isFacebookPictureLink(element) && element.getAttribute('aria-label') && !getMatchingAncestorByCss(element, '[role=article]')) { 
+        if (originalTarget instanceof HTMLImageElement && isFacebookPictureLink(element) && element.getAttribute('aria-label') && !getMatchingAncestorByCss(element, '[role=article]')) {
             return getIdentifier(window.location.href);
         }
 
@@ -583,7 +603,7 @@ function tryUnwrapNestedURL(url: URL): URL {
     return null;
 }
 
-interface TwitterMapping { 
+interface TwitterMapping {
     userName: string;
     numericId: string;
 }
@@ -591,10 +611,10 @@ interface TwitterMapping {
 
 const MASTODON_FALSE_POSITIVES = ['tiktok.com', 'youtube.com', 'medium.com', 'foundation.app', 'pronouns.page'];
 
-function tryUnwrapSuffix(str : string, suffix : string) {
+function tryUnwrapSuffix(str: string, suffix: string) {
     return str && str.endsWith(suffix) ? str.substring(0, str.length - suffix.length) : null;
 }
-function tryUnwrapPrefix(str : string, prefix : string) {
+function tryUnwrapPrefix(str: string, prefix: string) {
     return str && str.startsWith(prefix) ? str.substring(prefix.length) : null;
 }
 
@@ -607,7 +627,7 @@ function getIdentifierFromURLImpl(url: URL): string {
         const wrappedSite = tryUnwrapPrefix(identifier, 'web.brid.gy/@');
         if (wrappedSite) return wrappedSite;
     }
-    
+
     if (identifier && !identifier.includes('/')) {
         const mastodonBridge = tryUnwrapSuffix(identifier, '.ap.brid.gy');
         if (mastodonBridge) {
@@ -645,7 +665,7 @@ function getIdentifierFromURLIgnoreBridges(url: URL): string {
 
     const pathArray = url.pathname.split('/');
 
-    if (domainIs(host, 'bsky.social') || domainIs(host, 'bsky.app')) { 
+    if (domainIs(host, 'bsky.social') || domainIs(host, 'bsky.app')) {
         let username: string = null;
         if (pathArray[3] == 'lists') return null;
         if (pathArray[3] == 'feed') return null;
@@ -655,7 +675,7 @@ function getIdentifierFromURLIgnoreBridges(url: URL): string {
                 username = username.substring(1);
         } else if (url.pathname.startsWith('/@')) {
             username = pathArray[1].substring(1);
-        } else if (host.includes('.bsky.')) { 
+        } else if (host.includes('.bsky.')) {
             username = captureRegex(host, /^(.+)\.bsky/)
         }
         return username ? (username.includes('.') ? username : username + '.bsky.social') : null;
@@ -738,9 +758,9 @@ function getIdentifierFromURLIgnoreBridges(url: URL): string {
         return 'cohost.org' + getPartialPath(url.pathname, 1);
     } else {
         if (host.startsWith('m.')) host = host.substr(2);
-        if (url.pathname.startsWith('/@') || url.pathname.startsWith('/web/@')) { 
+        if (url.pathname.startsWith('/@') || url.pathname.startsWith('/web/@')) {
             let username = getPathPart(url.pathname, 0);
-            if (username == 'web') { 
+            if (username == 'web') {
                 username = getPathPart(url.pathname, 1);
             }
             username = username.substring(1);
@@ -749,7 +769,7 @@ function getIdentifierFromURLIgnoreBridges(url: URL): string {
             if (parts.length == 1 && username && !MASTODON_FALSE_POSITIVES.includes(host))
                 return host + '/@' + username;
         }
-        if (url.pathname.startsWith('/users/')) { 
+        if (url.pathname.startsWith('/users/')) {
             let username = getPathPart(url.pathname, 1);
             if (username && !MASTODON_FALSE_POSITIVES.includes(host))
                 return host + '/@' + username;
@@ -771,7 +791,7 @@ function getMatchingAncestor(node: HTMLElement, match: (node: HTMLElement) => bo
     return node;
 }
 function getOutermostMatchingAncestor(node: HTMLElement, match: (node: HTMLElement) => boolean) {
-    let result : HTMLElement = null;
+    let result: HTMLElement = null;
     while (node) {
         if (match(node)) result = node;
         node = node.parentElement;
@@ -779,7 +799,7 @@ function getOutermostMatchingAncestor(node: HTMLElement, match: (node: HTMLEleme
     return result;
 }
 
-function getAbsoluteOffsetTop(node: HTMLElement) { 
+function getAbsoluteOffsetTop(node: HTMLElement) {
     let top = 0;
     while (node) {
         top += node.offsetTop;
@@ -795,16 +815,16 @@ function getMatchingAncestorByCss(node: HTMLElement, cssMatch: string) {
 function getSnippet(node: HTMLElement): HTMLElement {
     try {
         return getSnippetImpl(node);
-    } catch (e) { 
+    } catch (e) {
         console.warn("Could not obtain snippet: " + e);
         return null;
     }
 }
-function getSnippetImpl(node: HTMLElement) : HTMLElement {
+function getSnippetImpl(node: HTMLElement): HTMLElement {
     if (hostname == 'facebook.com') {
         const pathname = window.location.pathname;
         const isPhotoPage = pathname.startsWith('/photo') || pathname.includes('/photos/') || pathname.startsWith('/video') || pathname.includes('/videos/');
-        if (isPhotoPage) { 
+        if (isPhotoPage) {
             const sidebar = document.querySelector('[role=complementary]');
             if (sidebar) return sidebar.parentElement;
         }
@@ -832,22 +852,22 @@ function getSnippetImpl(node: HTMLElement) : HTMLElement {
     if (hostname == 'tumblr.com')
         return getMatchingAncestor(node, x => (x.dataset && !!(x.dataset.postId || x.dataset.id)) || x.classList.contains('post'));
 
-    if (hostname == 'threads.net') {         
+    if (hostname == 'threads.net') {
         if (location.pathname.includes('/post/')) {
             return getOutermostMatchingAncestor(node, x => getAbsoluteOffsetTop(x) > 30);
-        } else { 
+        } else {
             return getOutermostMatchingAncestor(node, x => x.dataset.pressableContainer == 'true');
         }
     }
-    if (hostname == 'bsky.app') { 
+    if (hostname == 'bsky.app') {
         if (location.pathname.includes('/post/')) {
             return getOutermostMatchingAncestor(node, x => x.dataset.testid?.startsWith('postThreadItem-by-'))?.parentElement?.parentElement;
-        }else{
+        } else {
             return getOutermostMatchingAncestor(node, x => x.dataset.testid?.startsWith('feedItem-by-'));
         }
     }
     if (isMastodon)
-        return (/\/\d+$/.test(location.pathname) ? getMatchingAncestorByCss(node, '.scrollable') : null ) ?? getMatchingAncestorByCss(node, '.status, article, .detailed-status__wrapper, .status__wrapper-reply');
+        return (/\/\d+$/.test(location.pathname) ? getMatchingAncestorByCss(node, '.scrollable') : null) ?? getMatchingAncestorByCss(node, '.status, article, .detailed-status__wrapper, .status__wrapper-reply');
     return null;
 }
 
@@ -913,10 +933,10 @@ function displayConfirmation(identifier: string, label: LabelKind, badIdentifier
     } else {
         const suffix = (isMastodon && !colorLinks) ? 'on supported Mastodon instances.' :
             (domainIs(hostname, 'tumblr.com') && !colorLinks) ? 'on the Tumblr dashboard.' :
-            'on search engines and social networks.';
+                'on search engines and social networks.';
         text = identifier + (
             label == 't-friendly' ? ' will be displayed as trans-friendly ' + suffix :
-                label == 'transphobic' ? ' will be displayed as anti-trans ' + suffix:
+                label == 'transphobic' ? ' will be displayed as anti-trans ' + suffix :
                     ' has been cleared.'
         );
     }
@@ -940,7 +960,7 @@ async function findTwitterNumericIdsFirefox(request: ShinigamiEyesFindTwitterNum
     // Firefox only supports wrappedJSObject
     return shinigamiEyesFindTwitterNumericIds(request, true);
 }
-async function findTwitterNumericIdsChrome(request: ShinigamiEyesFindTwitterNumericIdsRequest): Promise<ShinigamiEyesFindTwitterNumericIdsResponse> { 
+async function findTwitterNumericIdsChrome(request: ShinigamiEyesFindTwitterNumericIdsRequest): Promise<ShinigamiEyesFindTwitterNumericIdsResponse> {
     // Chrome only supports world=MAIN
     request.requestId = crypto.randomUUID();
     let resolve: (result: ShinigamiEyesFindTwitterNumericIdsResponse) => void = null;
@@ -953,7 +973,7 @@ async function findTwitterNumericIdsChrome(request: ShinigamiEyesFindTwitterNume
                 resolve(response);
             }
         }
-  
+
     };
     try {
         window.addEventListener('message', handler);
@@ -965,7 +985,7 @@ async function findTwitterNumericIdsChrome(request: ShinigamiEyesFindTwitterNume
         });
         var timeout = new Promise<ShinigamiEyesFindTwitterNumericIdsResponse>(resolve => setTimeout(() => resolve({ mappings: null }), 200));
         return await Promise.race([promise, timeout]);
-    } finally { 
+    } finally {
         window.removeEventListener('message', handler);
     }
 }
@@ -997,11 +1017,11 @@ browser.runtime.onMessage.addListener<ShinigamiEyesMessage, ShinigamiEyesSubmiss
 
 
     (async () => {
-            
+
         message.identifier = identifier;
         if (identifier.startsWith('facebook.com/'))
             message.secondaryIdentifier = getIdentifier(message.url);
-        
+
 
         var snippet = getSnippet(target);
         message.linkId = ++lastGeneratedLinkId;
@@ -1021,7 +1041,7 @@ browser.runtime.onMessage.addListener<ShinigamiEyesMessage, ShinigamiEyesSubmiss
                     const response = await findTwitterNumericIdsFirefox(request);
                     const twitterMapping = response.mappings?.filter(x => twitterUserName == x.userName?.toLowerCase())[0];
                     if (twitterMapping)
-                        message.secondaryIdentifier = 'twitter.com/i/user/' + twitterMapping.numericId;      
+                        message.secondaryIdentifier = 'twitter.com/i/user/' + twitterMapping.numericId;
                 }
             } catch (error) {
                 console.warn(error);
